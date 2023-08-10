@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: sharding-jdbc-demo
+  profiles:
+    active: dev
+  shardingsphere:
+    # 内存模式
+    mode:
+      type: Memory
+    # 打印SQl
+    props:
+      sql-show: true

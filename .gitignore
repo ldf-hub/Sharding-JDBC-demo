@@ -1,0 +1,8 @@
+.idea/**
+target/**
+**.iml
+.classpath
+./.project
+*.prefs
+./src/main/resources/rebel.xml
+*.log

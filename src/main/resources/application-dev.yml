@@ -1,0 +1,106 @@
+spring:
+  shardingsphere:
+    datasource:
+      names: server-user,server-order0,server-order1
+      server-user:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: "com.mysql.cj.jdbc.Driver"
+        jdbc-url: "jdbc:mysql://101.34.45.104:3301/db_user"
+        username: "root"
+        password: "03790379"
+      server-order0:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: "com.mysql.cj.jdbc.Driver"
+        jdbc-url: "jdbc:mysql://101.34.45.104:3310/db_order"
+        username: "root"
+        password: "03790379"
+      server-order1:
+        type: com.zaxxer.hikari.HikariDataSource
+        driver-class-name: "com.mysql.cj.jdbc.Driver"
+        jdbc-url: "jdbc:mysql://101.34.45.104:3311/db_order"
+        username: "root"
+        password: "03790379"
+    rules:
+      # 水平分片规则
+      sharding:
+        # 配置绑定表规则 分片规则一致的一组分片表，使用绑定表进行多表关联查询时必须使用分片键进行关联，否则会出现笛卡尔积关联或跨库关联，影响查询效率。
+        binding-tables[0]: t_order,t_order_item
+        # 广播表
+        broadcast-tables[0]: t_dict
+        # 不同表的规则
+        tables:
+          # 字典表
+          t_dict:
+            # 哪几个数据节点要用到该字典表，默认所有
+            actual-data-nodes: server-user.t_dict,server-order$->{0..1}.t_dict
+          t_order:
+            # 使用哪个数据节点
+            actual-data-nodes: server-order$->{0..1}.t_order$->{0..1}
+            # 分库策略
+            database-strategy:
+              standard:
+                # 分片列名称
+                sharding-column: user_id
+                # 分片算法名称
+                sharding-algorithm-name: alg_mod
+            # 分表策略
+            table-strategy:
+              standard:
+                # 分片列名称
+                sharding-column: order_no
+                # 分片算法名称
+                sharding-algorithm-name: alg_hash_mod
+            # 键生成规则
+            key-generate-strategy:
+              # 主键字段
+              column: id
+              # 算法名称
+              key-generator-name: alg_snowflake
+          t_order_item:
+            # 使用哪个数据节点
+            actual-data-nodes: server-order$->{0..1}.t_order_item$->{0..1} # 分库策略
+            database-strategy:
+              standard:
+                # 分片列名称
+                sharding-column: user_id
+                # 分片算法名称
+                sharding-algorithm-name: alg_mod
+            # 分表策略
+            table-strategy:
+              standard:
+                # 分片列名称
+                sharding-column: order_no
+                # 分片算法名称
+                sharding-algorithm-name: alg_hash_mod
+             # 键生成规则
+            key-generate-strategy:
+              # 主键字段
+              column: id
+              # 算法名称
+              key-generator-name: alg_snowflake
+          t_user:
+            actual-data-nodes: server-user.t_user
+        # 分片算法类型
+        sharding-algorithms:
+          # 行表达式算法，alg_inline_userid是自定义名称
+          alg_inline_userid:
+            type: INLINE
+            props:
+              algorithm-expression: server-order$->{user_id % 2}
+          # 取模分片算法
+          alg_mod:
+            type: MOD
+            props:
+              # 对2取模，跟我们自己定义的是一样的
+              sharding-count: 2
+          alg_hash_mod:
+            type: HASH_MOD
+            props:
+              sharding-count: 2
+        # 主键生成规则
+        key-generators:
+          # 规则名称 自定义
+          alg_snowflake:
+            # 类型 雪花算法
+            type: SNOWFLAKE
+
